@@ -29,7 +29,7 @@ func Uptime() (time.Duration, error){
 func UpSince() (time.Time, error) {
 	duration, err := Uptime()
 	if err != nil {
-		return time.Unix(0, 0), errors.New("Could not get uptime.")
+		return time.Unix(0, 0).UTC(), errors.New("Could not get uptime.")
 	}
 	return time.Now().Add(-1 * duration), nil
 }
