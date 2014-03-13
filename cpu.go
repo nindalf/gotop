@@ -60,7 +60,7 @@ func getStats(snapshotOne, snapshotTwo string) float64 {
 	}
 	activePercentage := 100 * activeTime / (activeTime + idleTime)
 	// Return value is truncated to 2 places after decimal
-	return float64(int(100 * activePercentage))/100
+	return float64(int(100*activePercentage)) / 100
 }
 
 func cpuSnapshot() ([]string, error) {

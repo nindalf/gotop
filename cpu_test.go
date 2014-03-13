@@ -29,14 +29,18 @@ func average(input []float64) float64 {
 	for i := 0; i < len(input); i++ {
 		sum = sum + input[i]
 	}
-	average := sum/float64(len(input))
-	return float64(int(average * 100)) / 100
+	average := sum / float64(len(input))
+	return float64(int(average*100)) / 100
 }
 
 func TestCPUUsage(t *testing.T) {
 	cpuStatChan := make(chan CPUStat)
 	go CPUUsage(cpuStatChan, 2*time.Second)
-	for cpuStats := range cpuStatChan {
+	for {
+		cpuStats, ok := <- cpuStatChan
+		if ok == false {
+			break
+		}
 		fmt.Println(cpuStats.AverageUtilization, cpuStats.CPUUtilization, average(cpuStats.CPUUtilization))
 	}
 }
