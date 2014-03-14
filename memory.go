@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	memInfoFile = "/proc/meminfo"
-	memInfoFields = []string {"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
+	memInfoFile   = "/proc/meminfo"
+	memInfoFields = []string{"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
 )
 
 type MemInfo struct {
@@ -44,19 +44,19 @@ func MemoryUsage(memInfoChan chan MemInfo, interval time.Duration) {
 func getMemInfo(data map[string]int) MemInfo {
 	var memInfo MemInfo
 	for key, value := range data {
-		switch(key) {
-			case "MemTotal":
-				memInfo.MemTotal = value
-			case "MemFree":
-				memInfo.MemFree = value
-			case "Buffers":
-				memInfo.Buffers = value
-			case "Cached":
-				memInfo.Cached = value
-			case "SwapTotal":
-				memInfo.SwapTotal = value
-			case "SwapFree":
-				memInfo.SwapFree = value
+		switch key {
+		case "MemTotal":
+			memInfo.MemTotal = value
+		case "MemFree":
+			memInfo.MemFree = value
+		case "Buffers":
+			memInfo.Buffers = value
+		case "Cached":
+			memInfo.Cached = value
+		case "SwapTotal":
+			memInfo.SwapTotal = value
+		case "SwapFree":
+			memInfo.SwapFree = value
 		}
 	}
 	return memInfo
@@ -72,8 +72,8 @@ func fieldName(line string) string {
 
 func fieldValue(line string) int {
 	indexOne := strings.IndexAny(line, "0123456789")
-	indexTwo := strings.LastIndex(line, " ")
-	val, _ := strconv.Atoi(line[indexOne:indexTwo])
+	indexTwo := strings.LastIndexAny(line, "0123456789")
+	val, _ := strconv.Atoi(line[indexOne : indexTwo+1])
 	return val
 }
 
