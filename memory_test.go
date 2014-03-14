@@ -13,6 +13,7 @@ func TestMemoryUsage(t *testing.T) {
 	iterations := 0
 	for {
 		memInfo, ok := <-memInfoChan
+		iterations = iterations + 1
 		if ok == false || iterations > 3 {
 			break
 		}
