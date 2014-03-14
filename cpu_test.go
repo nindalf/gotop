@@ -1,6 +1,7 @@
 package gotop
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -34,13 +35,16 @@ func average(input []float64) float64 {
 }
 
 func TestCPUUsage(t *testing.T) {
-	cpuStatChan := make(chan CPUStat)
-	go CPUUsage(cpuStatChan, 2*time.Second)
+	cpuInfoChan := make(chan CPUInfo)
+	go CPUUsage(cpuInfoChan, time.Second)
+	iterations := 0
 	for {
-		cpuStats, ok := <- cpuStatChan
-		if ok == false {
+		cpuInfo, ok := <-cpuInfoChan
+		iterations = iterations + 1
+		if ok == false || iterations > 3 {
 			break
 		}
-		fmt.Println(cpuStats.AverageUtilization, cpuStats.CPUUtilization, average(cpuStats.CPUUtilization))
+		a, _ := json.Marshal(cpuInfo)
+		fmt.Println(string(a))
 	}
 }

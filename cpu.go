@@ -14,7 +14,7 @@ var (
 	cpuStatFile = "/proc/stat"
 )
 
-type CPUStat struct {
+type CPUInfo struct {
 	AverageUtilization float64
 	CPUUtilization     []float64
 }
@@ -71,10 +71,10 @@ func cpuSnapshot() ([]string, error) {
 	return strings.Split(snapshot, "\n"), nil
 }
 
-func CPUUsage(cpuStatChan chan CPUStat, interval time.Duration) {
-	defer close(cpuStatChan)
+func CPUUsage(cpuInfoChan chan CPUInfo, interval time.Duration) {
+	defer close(cpuInfoChan)
 	numberOfCpus := numberOfCpus()
-	stats := CPUStat{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
+	cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
 	var currentSnapshot, previousSnapshot []string
 	currentSnapshot, err := cpuSnapshot()
 	if err != nil {
@@ -87,12 +87,12 @@ func CPUUsage(cpuStatChan chan CPUStat, interval time.Duration) {
 		if err != nil {
 			return
 		}
-		stats.AverageUtilization = getStats(currentSnapshot[0], previousSnapshot[0])
+		cpuInfo.AverageUtilization = getStats(currentSnapshot[0], previousSnapshot[0])
 		for i := 1; i <= numberOfCpus; i++ {
-			stats.CPUUtilization[i-1] = getStats(currentSnapshot[i], previousSnapshot[i])
+			cpuInfo.CPUUtilization[i-1] = getStats(currentSnapshot[i], previousSnapshot[i])
 		}
 
-		cpuStatChan <- stats
+		cpuInfoChan <- cpuInfo
 	}
 }
 
