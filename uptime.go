@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	uptimeFile  = "/proc/uptime"
+	uptimeFile = "/proc/uptime"
 )
 
 func Uptime() (time.Duration, error) {

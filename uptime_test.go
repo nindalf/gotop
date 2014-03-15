@@ -19,7 +19,7 @@ func TestUptimeWrongFile(t *testing.T) {
 	if err == nil {
 		t.FailNow()
 	}
-	uptimeFile  = "/proc/uptime"
+	uptimeFile = "/proc/uptime"
 }
 
 func TestUpSince(t *testing.T) {
@@ -37,5 +37,5 @@ func TestUpSinceWrongFile(t *testing.T) {
 	if err == nil {
 		t.FailNow()
 	}
-	uptimeFile  = "/proc/uptime"
+	uptimeFile = "/proc/uptime"
 }
