@@ -16,6 +16,45 @@ type CPUInfo struct {
 	CPUUtilization     []float64
 }
 
+func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
+	result := make(chan CPUInfo)
+	errc := make(chan error, 1)
+	var err error
+	cleanup := func() {
+		errc <- err
+		close(errc)
+		close(result)
+	}
+	go func() {
+		defer cleanup()
+		numberOfCpus := numberOfCpus()
+		cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
+		var currentFile, previousFile []string
+		currentFile, err = readCPUFile()
+		if err != nil {
+			return
+		}
+		for {
+			previousFile = currentFile
+			time.Sleep(interval)
+			currentFile, err = readCPUFile()
+			if err != nil {
+				return
+			}
+			cpuInfo.AverageUtilization = getStats(currentFile[0], previousFile[0])
+			for i := 1; i <= numberOfCpus; i++ {
+				cpuInfo.CPUUtilization[i-1] = getStats(currentFile[i], previousFile[i])
+			}
+			select {
+			case result <- cpuInfo:
+			case <-done:
+				return
+			}
+		}
+	}()
+	return result, errc
+}
+
 func numberOfCpus() int {
 	numberOfCpus := 0
 	cpuStats, err := readCPUFile()
@@ -57,43 +96,4 @@ func readCPUFile() ([]string, error) {
 		return make([]string, 0), err
 	}
 	return strings.Split(snapshot, "\n"), nil
-}
-
-func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
-	result := make(chan CPUInfo)
-	errc := make(chan error, 1)
-	var err error
-	cleanup := func() {
-		errc <- err
-		close(errc)
-		close(result)
-	}
-	go func() {
-		defer cleanup()
-		numberOfCpus := numberOfCpus()
-		cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
-		var currentFile, previousFile []string
-		currentFile, err = readCPUFile()
-		if err != nil {
-			return
-		}
-		for {
-			previousFile = currentFile
-			time.Sleep(interval)
-			currentFile, err = readCPUFile()
-			if err != nil {
-				return
-			}
-			cpuInfo.AverageUtilization = getStats(currentFile[0], previousFile[0])
-			for i := 1; i <= numberOfCpus; i++ {
-				cpuInfo.CPUUtilization[i-1] = getStats(currentFile[i], previousFile[i])
-			}
-			select {
-			case result <- cpuInfo:
-			case <-done:
-				return
-			}
-		}
-	}()
-	return result, errc
 }
