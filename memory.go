@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	memInfoFile   = "/proc/meminfo"
+	totalMemoryFile   = "/proc/meminfo"
 	memInfoFields = []string{"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
 )
 
@@ -21,7 +21,7 @@ type MemInfo struct {
 	SwapFree  int
 }
 
-func MemoryUsage(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, <-chan error) {
+func TotalMemory(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, <-chan error) {
 	result := make(chan MemInfo)
 	errc := make(chan error, 1)
 	var err error
@@ -35,7 +35,7 @@ func MemoryUsage(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, 
 	go func() {
 		defer cleanup()
 		for {
-			memoryData, err = readFile(memInfoFile)
+			memoryData, err = readFile(totalMemoryFile)
 			if err != nil {
 				return
 			}

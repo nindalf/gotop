@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-func TestMemoryUsage(t *testing.T) {
+func TestTotalMemory(t *testing.T) {
 	done := make(chan struct{})
-	memInfoChan, errc := MemoryUsage(done, time.Second)
+	memInfoChan, errc := TotalMemory(done, time.Second)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
 			done <- struct{}{}
@@ -27,9 +27,9 @@ func TestMemoryUsage(t *testing.T) {
 }
 
 func TestMemoryUsageWrongFile(t *testing.T) {
-	memInfoFile = "/proc/wrongfile"
+	totalMemoryFile = "/proc/wrongfile"
 	done := make(chan struct{})
-	memInfoChan, errc := MemoryUsage(done, time.Second)
+	memInfoChan, errc := TotalMemory(done, time.Second)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
 			done <- struct{}{}
@@ -45,5 +45,5 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 			return
 		}
 	}
-	memInfoFile   = "/proc/meminfo"
+	totalMemoryFile   = "/proc/meminfo"
 }
