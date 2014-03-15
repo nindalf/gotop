@@ -1,9 +1,7 @@
 package gotop
 
 import (
-	"errors"
 	// "fmt"
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -16,14 +14,6 @@ var (
 type CPUInfo struct {
 	AverageUtilization float64
 	CPUUtilization     []float64
-}
-
-func readFile(filename string) (string, error) {
-	bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", errors.New("Could not read file.")
-	}
-	return string(bytes), nil
 }
 
 func numberOfCpus() int {
