@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	uptimeFile  = "/proc/uptime"
 	cpuStatFile = "/proc/stat"
 )
 
@@ -71,7 +70,7 @@ func readCPUFile() ([]string, error) {
 	return strings.Split(snapshot, "\n"), nil
 }
 
-func CPUUsage(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
+func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
 	result := make(chan CPUInfo)
 	errc := make(chan error, 1)
 	var err error
@@ -108,25 +107,4 @@ func CPUUsage(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-c
 		}
 	}()
 	return result, errc
-}
-
-func Uptime() (time.Duration, error) {
-	uptimeString, err := readFile(uptimeFile)
-	if err != nil {
-		return 0, err
-	}
-	uptime := strings.Split(uptimeString, " ")[0]
-	uptimeDuration, err := time.ParseDuration(uptime + "s")
-	if err != nil {
-		return 0, errors.New("Could not parse uptime.")
-	}
-	return uptimeDuration, nil
-}
-
-func UpSince() (time.Time, error) {
-	duration, err := Uptime()
-	if err != nil {
-		return time.Unix(0, 0).UTC(), errors.New("Could not get uptime.")
-	}
-	return time.Now().Add(-1 * duration), nil
 }
