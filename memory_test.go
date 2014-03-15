@@ -10,7 +10,7 @@ func TestTotalMemory(t *testing.T) {
 	memInfoChan, errc := TotalMemory(done, testingDelay)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
-			done <- struct{}{}
+			close(done)
 		}
 		select {
 		case memInfo := <-memInfoChan:
@@ -29,10 +29,7 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 	totalMemoryFile = "/proc/wrongfile"
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, testingDelay)
-	for i := 0; ; i = i + 1 {
-		if i == 3 {
-			done <- struct{}{}
-		}
+	for{
 		select {
 		case memInfo := <-memInfoChan:
 			a, _ := json.Marshal(memInfo)
@@ -44,5 +41,5 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 			return
 		}
 	}
-	totalMemoryFile   = "/proc/meminfo"
+	totalMemoryFile = "/proc/meminfo"
 }

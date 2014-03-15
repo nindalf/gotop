@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	totalMemoryFile   = "/proc/meminfo"
-	memInfoFields = []string{"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
+	totalMemoryFile = "/proc/meminfo"
+	memInfoFields   = []string{"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
 )
 
 type MemInfo struct {
@@ -23,7 +23,7 @@ type MemInfo struct {
 
 func TotalMemory(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, <-chan error) {
 	result := make(chan MemInfo)
-	errc := make(chan error, 1)
+	errc := make(chan error)
 	var err error
 	cleanup := func() {
 		errc <- err

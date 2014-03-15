@@ -10,7 +10,7 @@ func TestTotalCPU(t *testing.T) {
 	cpuInfoChan, errc := TotalCPU(done, testingDelay)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
-			done <- struct{}{}
+			close(done)
 		}
 		select {
 		case cpuInfo := <-cpuInfoChan:

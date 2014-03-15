@@ -18,7 +18,7 @@ type CPUInfo struct {
 
 func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
 	result := make(chan CPUInfo)
-	errc := make(chan error, 1)
+	errc := make(chan error)
 	var err error
 	cleanup := func() {
 		errc <- err
