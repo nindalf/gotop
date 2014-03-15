@@ -3,12 +3,11 @@ package gotop
 import (
 	"encoding/json"
 	"testing"
-	"time"
 )
 
 func TestTotalMemory(t *testing.T) {
 	done := make(chan struct{})
-	memInfoChan, errc := TotalMemory(done, time.Second)
+	memInfoChan, errc := TotalMemory(done, testingDelay)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
 			done <- struct{}{}
@@ -29,7 +28,7 @@ func TestTotalMemory(t *testing.T) {
 func TestMemoryUsageWrongFile(t *testing.T) {
 	totalMemoryFile = "/proc/wrongfile"
 	done := make(chan struct{})
-	memInfoChan, errc := TotalMemory(done, time.Second)
+	memInfoChan, errc := TotalMemory(done, testingDelay)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
 			done <- struct{}{}
