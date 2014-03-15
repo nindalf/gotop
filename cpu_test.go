@@ -11,18 +11,36 @@ func TestUptime(t *testing.T) {
 	uptimeDuration, err := Uptime()
 	if err != nil {
 		fmt.Println(err)
-		t.Fail()
+		t.FailNow()
 	}
 	fmt.Println(uptimeDuration)
+}
+
+func TestUptimeWrongFile(t *testing.T) {
+	uptimeFile = "/proc/wrongfile"
+	_, err := Uptime()
+	if err == nil {
+		t.FailNow()
+	}
+	uptimeFile  = "/proc/uptime"
 }
 
 func TestUpSince(t *testing.T) {
 	upSince, err := UpSince()
 	if err != nil {
 		fmt.Println(err)
-		t.Fail()
+		t.FailNow()
 	}
 	fmt.Println(upSince)
+}
+
+func TestUpSinceWrongFile(t *testing.T) {
+	uptimeFile = "/proc/wrongfile"
+	_, err := UpSince()
+	if err == nil {
+		t.FailNow()
+	}
+	uptimeFile  = "/proc/uptime"
 }
 
 func average(input []float64) float64 {
@@ -65,7 +83,7 @@ func TestCPUUsageWrongFile(t *testing.T) {
 			a, _ := json.Marshal(cpuInfo)
 			fmt.Println(string(a))
 		case err := <-errc:
-			if err.Error() != "Could not read file." {
+			if err == nil {
 				t.FailNow()
 			}
 			return
