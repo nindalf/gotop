@@ -8,16 +8,19 @@ import (
 )
 
 func TestMemoryUsage(t *testing.T) {
-	memInfoChan := make(chan MemInfo)
-	go MemoryUsage(memInfoChan, time.Second)
-	iterations := 0
-	for {
-		memInfo, ok := <-memInfoChan
-		iterations = iterations + 1
-		if ok == false || iterations > 3 {
-			break
+	done := make(chan struct{})
+	memInfoChan, errc := MemoryUsage(done, time.Second)
+	for i := 0; ; i = i + 1 {
+		if i == 3 {
+			done <- struct{}{}
 		}
-		a, _ := json.Marshal(memInfo)
-		fmt.Println(string(a))
+		select {
+		case memInfo := <-memInfoChan:
+			a, _ := json.Marshal(memInfo)
+			fmt.Println(string(a))
+		case err := <-errc:
+			fmt.Println(err)
+			return
+		}
 	}
 }

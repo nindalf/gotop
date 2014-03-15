@@ -46,7 +46,10 @@ func TestCPUUsage(t *testing.T) {
 			a, _ := json.Marshal(cpuInfo)
 			fmt.Println(string(a))
 		case err := <-errc:
-			fmt.Println(err)
+			if err != nil {
+				fmt.Println(err)
+				t.FailNow()
+			}
 			return
 		}
 	}
@@ -58,12 +61,12 @@ func TestCPUUsageWrongFile(t *testing.T) {
 	cpuInfoChan, errc := CPUUsage(done, time.Second)
 	for {
 		select {
-		case cpuInfo :=<-cpuInfoChan:
+		case cpuInfo := <-cpuInfoChan:
 			a, _ := json.Marshal(cpuInfo)
 			fmt.Println(string(a))
 		case err := <-errc:
 			if err.Error() != "Could not read file." {
-				t.Fail()
+				t.FailNow()
 			}
 			return
 		}

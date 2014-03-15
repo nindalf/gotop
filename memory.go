@@ -21,24 +21,39 @@ type MemInfo struct {
 	SwapFree  int
 }
 
-func MemoryUsage(memInfoChan chan MemInfo, interval time.Duration) {
-	defer close(memInfoChan)
-	memInfoMap := make(map[string]int)
-	for {
-		memoryData, err := readFile(memInfoFile)
-		if err != nil {
-			return
-		}
-		for _, line := range strings.Split(memoryData, "\n") {
-			field := fieldName(line)
-			if isMemInfoField(field) {
-				memInfoMap[field] = fieldValue(line)
-			}
-		}
-		memInfo := getMemInfo(memInfoMap)
-		memInfoChan <- memInfo
-		time.Sleep(interval)
+func MemoryUsage(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, <-chan error) {
+	result := make(chan MemInfo)
+	errc := make(chan error, 1)
+	var err error
+	cleanup := func() {
+		errc <- err
+		close(errc)
+		close(result)
 	}
+	memInfoMap := make(map[string]int)
+	go func() {
+		defer cleanup()
+		for {
+			memoryData, err := readFile(memInfoFile)
+			if err != nil {
+				return
+			}
+			for _, line := range strings.Split(memoryData, "\n") {
+				field := fieldName(line)
+				if isMemInfoField(field) {
+					memInfoMap[field] = fieldValue(line)
+				}
+			}
+			memInfo := getMemInfo(memInfoMap)
+			select {
+			case result <- memInfo:
+			case <-done:
+				return
+			}
+			time.Sleep(interval)
+		}
+	}()
+	return result, errc
 }
 
 func getMemInfo(data map[string]int) MemInfo {
