@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	cpuStatFile = "/proc/stat"
+	totalCPUFile = "/proc/stat"
 )
 
 type CPUInfo struct {
@@ -28,13 +28,12 @@ func readFile(filename string) (string, error) {
 
 func numberOfCpus() int {
 	numberOfCpus := 0
-	cpuStats, err := readFile(cpuStatFile)
+	cpuStats, err := readCPUFile()
 	if err != nil {
 		return 0
 	}
-	lines := strings.Split(cpuStats, "\n")
-	for i := 0; i < len(lines); i++ {
-		if strings.Index(lines[i], "cpu") == 0 {
+	for i := 0; i < len(cpuStats); i++ {
+		if strings.Index(cpuStats[i], "cpu") == 0 {
 			numberOfCpus = numberOfCpus + 1
 		} else {
 			break
@@ -63,7 +62,7 @@ func getStats(snapshotOne, snapshotTwo string) float64 {
 }
 
 func readCPUFile() ([]string, error) {
-	snapshot, err := readFile(cpuStatFile)
+	snapshot, err := readFile(totalCPUFile)
 	if err != nil {
 		return make([]string, 0), err
 	}

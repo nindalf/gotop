@@ -27,7 +27,7 @@ func TestTotalCPU(t *testing.T) {
 }
 
 func TestTotalCPUWrongFile(t *testing.T) {
-	cpuStatFile = "/proc/wrongfile"
+	totalCPUFile = "/proc/wrongfile"
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, time.Second)
 	for {
@@ -42,5 +42,5 @@ func TestTotalCPUWrongFile(t *testing.T) {
 			return
 		}
 	}
-	cpuStatFile = "/proc/stat"
+	totalCPUFile = "/proc/stat"
 }
