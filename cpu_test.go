@@ -2,7 +2,6 @@ package gotop
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 )
@@ -10,10 +9,10 @@ import (
 func TestUptime(t *testing.T) {
 	uptimeDuration, err := Uptime()
 	if err != nil {
-		fmt.Println(err)
+		t.Log(err)
 		t.FailNow()
 	}
-	fmt.Println(uptimeDuration)
+	t.Log(uptimeDuration)
 }
 
 func TestUptimeWrongFile(t *testing.T) {
@@ -28,10 +27,10 @@ func TestUptimeWrongFile(t *testing.T) {
 func TestUpSince(t *testing.T) {
 	upSince, err := UpSince()
 	if err != nil {
-		fmt.Println(err)
+		t.Log(err)
 		t.FailNow()
 	}
-	fmt.Println(upSince)
+	t.Log(upSince)
 }
 
 func TestUpSinceWrongFile(t *testing.T) {
@@ -62,11 +61,10 @@ func TestCPUUsage(t *testing.T) {
 		select {
 		case cpuInfo := <-cpuInfoChan:
 			a, _ := json.Marshal(cpuInfo)
-			fmt.Println(string(a))
+			t.Log(string(a))
 		case err := <-errc:
 			if err != nil {
-				fmt.Println(err)
-				t.FailNow()
+				t.Fatal(err)
 			}
 			return
 		}
@@ -81,7 +79,7 @@ func TestCPUUsageWrongFile(t *testing.T) {
 		select {
 		case cpuInfo := <-cpuInfoChan:
 			a, _ := json.Marshal(cpuInfo)
-			fmt.Println(string(a))
+			t.Log(string(a))
 		case err := <-errc:
 			if err == nil {
 				t.FailNow()

@@ -2,7 +2,6 @@ package gotop
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 )
@@ -17,9 +16,11 @@ func TestMemoryUsage(t *testing.T) {
 		select {
 		case memInfo := <-memInfoChan:
 			a, _ := json.Marshal(memInfo)
-			fmt.Println(string(a))
+			t.Log(string(a))
 		case err := <-errc:
-			fmt.Println(err)
+			if err != nil {
+				t.Fatal(err)
+			}
 			return
 		}
 	}
@@ -36,7 +37,7 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 		select {
 		case memInfo := <-memInfoChan:
 			a, _ := json.Marshal(memInfo)
-			fmt.Println(string(a))
+			t.Log(string(a))
 		case err := <-errc:
 			if err == nil {
 				t.FailNow()
