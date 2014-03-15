@@ -63,7 +63,7 @@ func getStats(snapshotOne, snapshotTwo string) float64 {
 	return float64(int(100*activePercentage)) / 100
 }
 
-func cpuSnapshot() ([]string, error) {
+func readCPUFile() ([]string, error) {
 	snapshot, err := readFile(cpuStatFile)
 	if err != nil {
 		return make([]string, 0), err
@@ -71,29 +71,43 @@ func cpuSnapshot() ([]string, error) {
 	return strings.Split(snapshot, "\n"), nil
 }
 
-func CPUUsage(cpuInfoChan chan CPUInfo, interval time.Duration) {
-	defer close(cpuInfoChan)
-	numberOfCpus := numberOfCpus()
-	cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
-	var currentSnapshot, previousSnapshot []string
-	currentSnapshot, err := cpuSnapshot()
-	if err != nil {
-		return
+func CPUUsage(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
+	result := make(chan CPUInfo)
+	errc := make(chan error, 1)
+	var err error
+	cleanup := func() {
+		errc <- err
+		close(errc)
+		close(result)
 	}
-	for {
-		previousSnapshot = currentSnapshot
-		time.Sleep(interval)
-		currentSnapshot, err = cpuSnapshot()
+	go func() {
+		defer cleanup()
+		numberOfCpus := numberOfCpus()
+		cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
+		var currentFile, previousFile []string
+		currentFile, err = readCPUFile()
 		if err != nil {
 			return
 		}
-		cpuInfo.AverageUtilization = getStats(currentSnapshot[0], previousSnapshot[0])
-		for i := 1; i <= numberOfCpus; i++ {
-			cpuInfo.CPUUtilization[i-1] = getStats(currentSnapshot[i], previousSnapshot[i])
+		for {
+			previousFile = currentFile
+			time.Sleep(interval)
+			currentFile, err = readCPUFile()
+			if err != nil {
+				return
+			}
+			cpuInfo.AverageUtilization = getStats(currentFile[0], previousFile[0])
+			for i := 1; i <= numberOfCpus; i++ {
+				cpuInfo.CPUUtilization[i-1] = getStats(currentFile[i], previousFile[i])
+			}
+			select {
+			case result <- cpuInfo:
+			case <-done:
+				return
+			}
 		}
-
-		cpuInfoChan <- cpuInfo
-	}
+	}()
+	return result, errc
 }
 
 func Uptime() (time.Duration, error) {

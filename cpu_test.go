@@ -35,16 +35,38 @@ func average(input []float64) float64 {
 }
 
 func TestCPUUsage(t *testing.T) {
-	cpuInfoChan := make(chan CPUInfo)
-	go CPUUsage(cpuInfoChan, time.Second)
-	iterations := 0
-	for {
-		cpuInfo, ok := <-cpuInfoChan
-		iterations = iterations + 1
-		if ok == false || iterations > 3 {
-			break
+	done := make(chan struct{})
+	cpuInfoChan, errc := CPUUsage(done, time.Second)
+	for i := 0; ; i = i + 1 {
+		if i == 3 {
+			done <- struct{}{}
 		}
-		a, _ := json.Marshal(cpuInfo)
-		fmt.Println(string(a))
+		select {
+		case cpuInfo := <-cpuInfoChan:
+			a, _ := json.Marshal(cpuInfo)
+			fmt.Println(string(a))
+		case err := <-errc:
+			fmt.Println(err)
+			return
+		}
 	}
+}
+
+func TestCPUUsageWrongFile(t *testing.T) {
+	cpuStatFile = "/proc/wrongfile"
+	done := make(chan struct{})
+	cpuInfoChan, errc := CPUUsage(done, time.Second)
+	for {
+		select {
+		case cpuInfo :=<-cpuInfoChan:
+			a, _ := json.Marshal(cpuInfo)
+			fmt.Println(string(a))
+		case err := <-errc:
+			if err.Error() != "Could not read file." {
+				t.Fail()
+			}
+			return
+		}
+	}
+	cpuStatFile = "/proc/stat"
 }
