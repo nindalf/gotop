@@ -31,10 +31,11 @@ func MemoryUsage(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, 
 		close(result)
 	}
 	memInfoMap := make(map[string]int)
+	var memoryData string
 	go func() {
 		defer cleanup()
 		for {
-			memoryData, err := readFile(memInfoFile)
+			memoryData, err = readFile(memInfoFile)
 			if err != nil {
 				return
 			}
