@@ -98,3 +98,21 @@ func readCPUFile() ([]string, error) {
 	}
 	return strings.Split(snapshot, "\n"), nil
 }
+
+func cputime() (float64, error) {
+	file, err := readCPUFile()
+	if err != nil {
+		return 0, err
+	}
+	start := strings.IndexAny(file[0], "0123456789")
+	times := strings.Split(file[0][start:], " ")
+	var total float64
+	for _, time := range times {
+		timef, err := strconv.ParseFloat(time, 32)
+		if err != nil {
+			return 0, err
+		}
+		total = total + timef
+	}
+	return total, nil
+}
