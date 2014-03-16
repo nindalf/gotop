@@ -27,6 +27,9 @@ func TestTotalCPU(t *testing.T) {
 
 func TestTotalCPUWrongFile(t *testing.T) {
 	totalCPUFile = "/proc/wrongfile"
+	defer func() {
+		totalCPUFile = "/proc/stat"
+	}()
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, Delay)
 	for {
@@ -41,5 +44,4 @@ func TestTotalCPUWrongFile(t *testing.T) {
 			return
 		}
 	}
-	totalCPUFile = "/proc/stat"
 }

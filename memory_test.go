@@ -27,6 +27,9 @@ func TestTotalMemory(t *testing.T) {
 
 func TestMemoryUsageWrongFile(t *testing.T) {
 	totalMemoryFile = "/proc/wrongfile"
+	defer func() {
+		totalMemoryFile = "/proc/meminfo"
+	}()
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, Delay)
 	for {
@@ -41,5 +44,4 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 			return
 		}
 	}
-	totalMemoryFile = "/proc/meminfo"
 }
