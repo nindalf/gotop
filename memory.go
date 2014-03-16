@@ -22,7 +22,7 @@ type MemInfo struct {
 }
 
 func TotalMemory(done <-chan struct{}, delay time.Duration) (<-chan MemInfo, <-chan error) {
-	result := make(chan MemInfo)
+	result := make(chan MemInfo, 1)
 	errc := make(chan error)
 	var err error
 	cleanup := func() {
