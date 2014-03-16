@@ -7,7 +7,7 @@ import (
 
 func TestTotalCPU(t *testing.T) {
 	done := make(chan struct{})
-	cpuInfoChan, errc := TotalCPU(done, testingDelay)
+	cpuInfoChan, errc := TotalCPU(done, Delay)
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
 			close(done)
@@ -28,7 +28,7 @@ func TestTotalCPU(t *testing.T) {
 func TestTotalCPUWrongFile(t *testing.T) {
 	totalCPUFile = "/proc/wrongfile"
 	done := make(chan struct{})
-	cpuInfoChan, errc := TotalCPU(done, testingDelay)
+	cpuInfoChan, errc := TotalCPU(done, Delay)
 	for {
 		select {
 		case cpuInfo := <-cpuInfoChan:

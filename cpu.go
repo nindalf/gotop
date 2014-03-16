@@ -16,7 +16,7 @@ type CPUInfo struct {
 	CPUUtilization     []float64
 }
 
-func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-chan error) {
+func TotalCPU(done <-chan struct{}, delay time.Duration) (<-chan CPUInfo, <-chan error) {
 	result := make(chan CPUInfo)
 	errc := make(chan error)
 	var err error
@@ -36,7 +36,7 @@ func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-c
 		}
 		for {
 			prev = cur
-			time.Sleep(interval)
+			time.Sleep(delay)
 			cur, err = readCPUFile()
 			if err != nil {
 				return

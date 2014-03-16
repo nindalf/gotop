@@ -21,7 +21,7 @@ type MemInfo struct {
 	SwapFree  int
 }
 
-func TotalMemory(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, <-chan error) {
+func TotalMemory(done <-chan struct{}, delay time.Duration) (<-chan MemInfo, <-chan error) {
 	result := make(chan MemInfo)
 	errc := make(chan error)
 	var err error
@@ -51,7 +51,7 @@ func TotalMemory(done <-chan struct{}, interval time.Duration) (<-chan MemInfo, 
 			case <-done:
 				return
 			}
-			time.Sleep(interval)
+			time.Sleep(delay)
 		}
 	}()
 	return result, errc
