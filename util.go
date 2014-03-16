@@ -9,7 +9,7 @@ import (
 
 var (
 	//Delay between samples
-	Delay = 500 * time.Millisecond 
+	Delay = 500 * time.Millisecond
 )
 
 func readFile(filename string) (string, error) {
