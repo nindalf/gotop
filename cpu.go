@@ -29,21 +29,21 @@ func TotalCPU(done <-chan struct{}, interval time.Duration) (<-chan CPUInfo, <-c
 		defer cleanup()
 		numberOfCpus := numberOfCpus()
 		cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
-		var currentFile, previousFile []string
-		currentFile, err = readCPUFile()
+		var cur, prev []string
+		cur, err = readCPUFile()
 		if err != nil {
 			return
 		}
 		for {
-			previousFile = currentFile
+			prev = cur
 			time.Sleep(interval)
-			currentFile, err = readCPUFile()
+			cur, err = readCPUFile()
 			if err != nil {
 				return
 			}
-			cpuInfo.AverageUtilization = getStats(currentFile[0], previousFile[0])
+			cpuInfo.AverageUtilization = getStats(cur[0], prev[0])
 			for i := 1; i <= numberOfCpus; i++ {
-				cpuInfo.CPUUtilization[i-1] = getStats(currentFile[i], previousFile[i])
+				cpuInfo.CPUUtilization[i-1] = getStats(cur[i], prev[i])
 			}
 			select {
 			case result <- cpuInfo:
@@ -72,12 +72,13 @@ func numberOfCpus() int {
 	return numberOfCpus - 1
 }
 
-func getStats(snapshotOne, snapshotTwo string) float64 {
-	cpuTimesOne, cpuTimesTwo := strings.Split(snapshotOne[5:], " "), strings.Split(snapshotTwo[5:], " ")
+func getStats(current, previous string) float64 {
+	// start :=
+	prev, cur := strings.Split(previous[5:], " "), strings.Split(current[5:], " ")
 	activeTime, idleTime := 0.0, 0.0
-	for i := 0; i < len(cpuTimesOne); i++ {
-		time1, _ := strconv.ParseFloat(cpuTimesOne[i], 32)
-		time2, _ := strconv.ParseFloat(cpuTimesTwo[i], 32)
+	for i := 0; i < len(cur); i++ {
+		time1, _ := strconv.ParseFloat(prev[i], 32)
+		time2, _ := strconv.ParseFloat(cur[i], 32)
 		if i != 3 {
 			activeTime = activeTime + time2 - time1
 		} else {
