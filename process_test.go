@@ -7,14 +7,13 @@ import (
 )
 
 func TestNothing(t *testing.T) {
-	processIds()
 }
 
-func TestProcessData(t *testing.T) {
+func TestProcessInfo(t *testing.T) {
 	done := make(chan struct{})
-	processInfoChan, errc := ProcessData(done, testingDelay)
+	processInfoChan, errc := GetProcessInfo(done, Delay)
 	for i := 0; ; i = i + 1 {
-		if i == 3 {
+		if i == 10 {
 			close(done)
 		}
 		select {
