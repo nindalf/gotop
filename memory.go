@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	totalMemoryFile = "/proc/meminfo"
+	TotalMemoryFile = "/proc/meminfo"
 	memInfoFields   = []string{"MemTotal", "MemFree", "Buffers", "Cached", "SwapTotal", "SwapFree"}
 )
 
@@ -52,7 +52,7 @@ func TotalMemory(done <-chan struct{}, delay time.Duration) (<-chan MemInfo, <-c
 func getMemInfo() (MemInfo, error) {
 	var memInfo MemInfo
 
-	memoryData, err := readFile(totalMemoryFile)
+	memoryData, err := readFile(TotalMemoryFile)
 	if err != nil {
 		return memInfo, err
 	}
