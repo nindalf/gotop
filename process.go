@@ -79,9 +79,9 @@ func processStat(pid int) (pstat, error) {
 
 func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
 	// Time is in nanoseconds. Needs to be converted to jiffies.
-	prevjiffy, curjiffy := float64(prevtime)/10000000, float64(curtime)/10000000
-	usercpu := float64(curps.utime-prevps.utime) / (curjiffy - prevjiffy)
-	systemcpu := float64(curps.stime-prevps.stime) / (curjiffy - prevjiffy)
+	timedelta := float64(curtime-prevtime) / 10000000
+	usercpu := float64(curps.utime-prevps.utime) / timedelta
+	systemcpu := float64(curps.stime-prevps.stime) / timedelta
 	usage := (usercpu + systemcpu) * 100
 	// Return value is truncated to 2 places after decimal
 	return float64(int(usage*100)) / 100
