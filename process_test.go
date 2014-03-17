@@ -3,8 +3,8 @@ package gotop
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 	"testing"
+	"time"
 )
 
 func TestNothing(t *testing.T) {
@@ -15,7 +15,7 @@ func TestProcessInfo(t *testing.T) {
 	done := make(chan struct{})
 	processInfoChan, errc := GetProcessInfo(done, Delay)
 	var success bool
-	timeout := time.After(2*Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock

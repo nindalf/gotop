@@ -10,7 +10,7 @@ func TestTotalCPU(t *testing.T) {
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, Delay)
 	var success bool
-	timeout := time.After(2*Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -43,7 +43,7 @@ func TestTotalCPUWrongFile(t *testing.T) {
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, Delay)
 	var success bool
-	timeout := time.After(2*Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		totalCPUFile = "/proc/stat"
 		close(done)

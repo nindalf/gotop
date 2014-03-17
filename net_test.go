@@ -43,7 +43,7 @@ func TestNet(t *testing.T) {
 			return
 		}
 		select {
-		case net := <- netChan:
+		case net := <-netChan:
 			a, _ := json.Marshal(net)
 			t.Log(string(a))
 			fmt.Println(string(a))

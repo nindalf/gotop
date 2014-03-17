@@ -3,8 +3,8 @@ package gotop
 import (
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -57,8 +57,8 @@ func numbytes(path string) (float64, error) {
 
 func getrate(prevbytes, curbytes float64, prevtime, curtime int64) float64 {
 	// Needs to be converted from nanoseconds to seconds
-	timedelta := float64(curtime - prevtime)/1000000000
-	return (curbytes - prevbytes)/(timedelta * 1024)
+	timedelta := float64(curtime-prevtime) / 1000000000
+	return (curbytes - prevbytes) / (timedelta * 1024)
 }
 
 func NetRate(done <-chan struct{}, delay time.Duration) (<-chan Net, <-chan error) {

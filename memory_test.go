@@ -10,7 +10,7 @@ func TestTotalMemory(t *testing.T) {
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, Delay)
 	var success bool
-	timeout := time.After(2*Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -43,7 +43,7 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, Delay)
 	var success bool
-	timeout := time.After(2*Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		totalMemoryFile = "/proc/meminfo"
 		close(done)
