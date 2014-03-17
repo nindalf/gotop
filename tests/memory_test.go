@@ -38,31 +38,3 @@ func TestTotalMemory(t *testing.T) {
 		}
 	}
 }
-
-func TestMemoryUsageWrongFile(t *testing.T) {
-	gotop.TotalMemoryFile = "/proc/wrongfile"
-	done := make(chan struct{})
-	memInfoChan, errc := gotop.TotalMemory(done, gotop.Delay)
-	var success bool
-	timeout := time.After(2 * gotop.Delay)
-	defer func() {
-		gotop.TotalMemoryFile = "/proc/meminfo"
-		close(done)
-		<-errc
-	}()
-	for {
-		select {
-		case <-memInfoChan:
-			t.Fatal("Should not return anything")
-		case err := <-errc:
-			if err == nil {
-				t.FailNow()
-			}
-			return
-		case <-timeout:
-			if success == false {
-				t.Fatal("No result. Goroutine hanging.")
-			}
-		}
-	}
-}

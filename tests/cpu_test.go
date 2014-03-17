@@ -38,31 +38,3 @@ func TestTotalCPU(t *testing.T) {
 		}
 	}
 }
-
-func TestTotalCPUWrongFile(t *testing.T) {
-	gotop.TotalCPUFile = "/proc/wrongfile"
-	done := make(chan struct{})
-	cpuInfoChan, errc := gotop.TotalCPU(done, gotop.Delay)
-	var success bool
-	timeout := time.After(2 * gotop.Delay)
-	defer func() {
-		gotop.TotalCPUFile = "/proc/stat"
-		close(done)
-		<-errc
-	}()
-	for {
-		select {
-		case <-cpuInfoChan:
-			t.Fatal("Should not return anything")
-		case err := <-errc:
-			if err == nil {
-				t.FailNow()
-			}
-			return
-		case <-timeout:
-			if success == false {
-				t.Fatal("No result. Goroutine hanging.")
-			}
-		}
-	}
-}
