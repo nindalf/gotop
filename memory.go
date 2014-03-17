@@ -25,27 +25,19 @@ func TotalMemory(done <-chan struct{}, delay time.Duration) (<-chan MemInfo, <-c
 	result := make(chan MemInfo, 1)
 	errc := make(chan error)
 	var err error
+	var memInfo MemInfo
 	cleanup := func() {
 		errc <- err
 		close(errc)
 		close(result)
 	}
-	memInfoMap := make(map[string]int)
-	var memoryData string
 	go func() {
 		defer cleanup()
 		for {
-			memoryData, err = readFile(totalMemoryFile)
+			memInfo, err = getMemInfo()
 			if err != nil {
 				return
 			}
-			for _, line := range strings.Split(memoryData, "\n") {
-				field := fieldName(line)
-				if isMemInfoField(field) {
-					memInfoMap[field] = fieldValue(line)
-				}
-			}
-			memInfo := getMemInfo(memInfoMap)
 			select {
 			case result <- memInfo:
 			case <-done:
@@ -57,25 +49,34 @@ func TotalMemory(done <-chan struct{}, delay time.Duration) (<-chan MemInfo, <-c
 	return result, errc
 }
 
-func getMemInfo(data map[string]int) MemInfo {
+func getMemInfo() (MemInfo, error) {
 	var memInfo MemInfo
-	for key, value := range data {
-		switch key {
-		case "MemTotal":
-			memInfo.MemTotal = value
-		case "MemFree":
-			memInfo.MemFree = value
-		case "Buffers":
-			memInfo.Buffers = value
-		case "Cached":
-			memInfo.Cached = value
-		case "SwapTotal":
-			memInfo.SwapTotal = value
-		case "SwapFree":
-			memInfo.SwapFree = value
+
+	memoryData, err := readFile(totalMemoryFile)
+	if err != nil {
+		return memInfo, err
+	}
+	for _, line := range strings.Split(memoryData, "\n") {
+		field := fieldName(line)
+		if isMemInfoField(field) {
+			value := fieldValue(line)
+			switch field {
+			case "MemTotal":
+				memInfo.MemTotal = value
+			case "MemFree":
+				memInfo.MemFree = value
+			case "Buffers":
+				memInfo.Buffers = value
+			case "Cached":
+				memInfo.Cached = value
+			case "SwapTotal":
+				memInfo.SwapTotal = value
+			case "SwapFree":
+				memInfo.SwapFree = value
+			}
 		}
 	}
-	return memInfo
+	return memInfo, nil
 }
 
 func fieldName(line string) string {
