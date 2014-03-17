@@ -2,15 +2,16 @@ package gotop
 
 import (
 	"encoding/json"
+	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
 func TestTotalCPU(t *testing.T) {
 	done := make(chan struct{})
-	cpuInfoChan, errc := TotalCPU(done, Delay)
+	cpuInfoChan, errc := gotop.TotalCPU(done, gotop.Delay)
 	var success bool
-	timeout := time.After(2 * Delay)
+	timeout := time.After(2 * gotop.Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -39,13 +40,13 @@ func TestTotalCPU(t *testing.T) {
 }
 
 func TestTotalCPUWrongFile(t *testing.T) {
-	totalCPUFile = "/proc/wrongfile"
+	gotop.TotalCPUFile = "/proc/wrongfile"
 	done := make(chan struct{})
-	cpuInfoChan, errc := TotalCPU(done, Delay)
+	cpuInfoChan, errc := gotop.TotalCPU(done, gotop.Delay)
 	var success bool
-	timeout := time.After(2 * Delay)
+	timeout := time.After(2 * gotop.Delay)
 	defer func() {
-		totalCPUFile = "/proc/stat"
+		gotop.TotalCPUFile = "/proc/stat"
 		close(done)
 		<-errc
 	}()

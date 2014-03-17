@@ -2,20 +2,16 @@ package gotop
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
-func TestNothing(t *testing.T) {
-	fmt.Println(Sysinfo())
-}
-
 func TestProcessInfo(t *testing.T) {
 	done := make(chan struct{})
-	processInfoChan, errc := GetProcessInfo(done, Delay)
+	processInfoChan, errc := gotop.GetProcessInfo(done, gotop.Delay)
 	var success bool
-	timeout := time.After(2 * Delay)
+	timeout := time.After(2 * gotop.Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
