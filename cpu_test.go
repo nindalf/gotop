@@ -3,11 +3,14 @@ package gotop
 import (
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 func TestTotalCPU(t *testing.T) {
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, Delay)
+	var success bool
+	timeout := time.After(2*Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -21,23 +24,28 @@ func TestTotalCPU(t *testing.T) {
 		case cpuInfo := <-cpuInfoChan:
 			a, _ := json.Marshal(cpuInfo)
 			t.Log(string(a))
+			success = true
 		case err := <-errc:
 			if err != nil {
 				t.Fatal(err)
 			}
 			return
+		case <-timeout:
+			if success == false {
+				t.Fatal("No result. Goroutine hanging.")
+			}
 		}
 	}
 }
 
 func TestTotalCPUWrongFile(t *testing.T) {
 	totalCPUFile = "/proc/wrongfile"
-	defer func() {
-		totalCPUFile = "/proc/stat"
-	}()
 	done := make(chan struct{})
 	cpuInfoChan, errc := TotalCPU(done, Delay)
+	var success bool
+	timeout := time.After(2*Delay)
 	defer func() {
+		totalCPUFile = "/proc/stat"
 		close(done)
 		<-errc
 	}()
@@ -50,6 +58,10 @@ func TestTotalCPUWrongFile(t *testing.T) {
 				t.FailNow()
 			}
 			return
+		case <-timeout:
+			if success == false {
+				t.Fatal("No result. Goroutine hanging.")
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package gotop
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 	"testing"
 )
 
@@ -13,6 +14,8 @@ func TestNothing(t *testing.T) {
 func TestProcessInfo(t *testing.T) {
 	done := make(chan struct{})
 	processInfoChan, errc := GetProcessInfo(done, Delay)
+	var success bool
+	timeout := time.After(2*Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -26,11 +29,16 @@ func TestProcessInfo(t *testing.T) {
 		case processInfo := <-processInfoChan:
 			a, _ := json.Marshal(processInfo[1])
 			t.Log(string(a))
+			success = true
 		case err := <-errc:
 			if err != nil {
 				t.Fatal(err)
 			}
 			return
+		case <-timeout:
+			if success == false {
+				t.Fatal("No result. Goroutine hanging.")
+			}
 		}
 	}
 }
