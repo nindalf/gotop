@@ -31,12 +31,12 @@ type Systeminfo struct {
 	Machine  string
 	CPUModel string
 	NumCPU   int
-	Memory string
+	Memory   string
 }
 
 func (s Systeminfo) String() string {
-	return fmt.Sprintf("Sysname: %s\nNodename: %s\nRelease: %s\nVersion: %s\nMachine: %s\nModel: %s\nnumCPU: %d\nTotal memory:%s",
-		s.Sysname, s.Nodename, s.Release, s.Version, s.Machine, s.CPUModel, s.NumCPU, s.Memory)	
+	return fmt.Sprintf("Sysname: \t%s\nNodename: \t%s\nRelease: \t%s\nVersion: \t%s\nMachine: \t%s\nModel: \t\t%s\nCPU cores: \t%d\nTotal memory:\t%s",
+		s.Sysname, s.Nodename, s.Release, s.Version, s.Machine, s.CPUModel, s.NumCPU, s.Memory)
 }
 
 func charToStr(input [65]int8) string {
@@ -48,7 +48,7 @@ func charToStr(input [65]int8) string {
 		out[i] = byte(val)
 	}
 	return string(out)
-}	
+}
 
 func Sysinfo() Systeminfo {
 	var uts syscall.Utsname
@@ -61,8 +61,7 @@ func Sysinfo() Systeminfo {
 	model := cpuModel()
 	numCPU := numberOfCpus()
 	memInfo, _ := getMemInfo()
-	memory := float64(memInfo.MemTotal)/(1024*1024)
+	memory := float64(memInfo.MemTotal) / (1024 * 1024)
 	memstr := strconv.FormatFloat(memory, 'f', 2, 64) + "GB"
 	return Systeminfo{sysname, nodename, release, version, machine, model, numCPU, memstr}
 }
-
