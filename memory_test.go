@@ -8,9 +8,14 @@ import (
 func TestTotalMemory(t *testing.T) {
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, Delay)
+	defer func() {
+		close(done)
+		// Necessary to read from error channel to prevent sending goroutine going into deadlock
+		<-errc
+	}()
 	for i := 0; ; i = i + 1 {
 		if i == 3 {
-			close(done)
+			return
 		}
 		select {
 		case memInfo := <-memInfoChan:
@@ -32,6 +37,10 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 	}()
 	done := make(chan struct{})
 	memInfoChan, errc := TotalMemory(done, Delay)
+	defer func() {
+		close(done)
+		<-errc
+	}()
 	for {
 		select {
 		case <-memInfoChan:
