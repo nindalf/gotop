@@ -15,11 +15,13 @@ func TestUptime(t *testing.T) {
 
 func TestUptimeWrongFile(t *testing.T) {
 	uptimeFile = "/proc/wrongfile"
+	defer func() {
+		uptimeFile = "/proc/uptime"
+	}()
 	_, err := Uptime()
 	if err == nil {
 		t.FailNow()
 	}
-	uptimeFile = "/proc/uptime"
 }
 
 func TestUpSince(t *testing.T) {
@@ -33,9 +35,11 @@ func TestUpSince(t *testing.T) {
 
 func TestUpSinceWrongFile(t *testing.T) {
 	uptimeFile = "/proc/wrongfile"
+	defer func() {
+		uptimeFile = "/proc/uptime"
+	}()
 	_, err := UpSince()
 	if err == nil {
 		t.FailNow()
 	}
-	uptimeFile = "/proc/uptime"
 }
