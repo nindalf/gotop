@@ -9,6 +9,7 @@ import (
 
 var (
 	totalCPUFile = "/proc/stat"
+	cpuInfoFile  = "/proc/cpuinfo"
 )
 
 type CPUInfo struct {
@@ -97,4 +98,16 @@ func readCPUFile() ([]string, error) {
 		return make([]string, 0), err
 	}
 	return strings.Split(snapshot, "\n"), nil
+}
+
+func cpuModel() string {
+	info, _ := readFile(cpuInfoFile)
+	for _, line := range strings.Split(info, "\n") {
+		splitline := strings.Split(line, ":")
+		field := strings.Trim(splitline[0], " \t")
+		if strings.EqualFold(field, "model name") {
+			return strings.Trim(splitline[1], " \t")
+		}
+	}
+	return ""
 }
