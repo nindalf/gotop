@@ -4,7 +4,6 @@ import (
 	// "errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -44,7 +43,7 @@ func processIds() ([]int, error) {
 	pids := make([]int, len(fi))
 	var index int
 	for _, i := range fi {
-		val, err := strconv.Atoi(filepath.Base(i.Name()))
+		val, err := strconv.Atoi(i.Name())
 		if err != nil {
 			continue
 		}
