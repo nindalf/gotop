@@ -85,7 +85,7 @@ func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
 	systemcpu := float64(curps.stime-prevps.stime) / (curjiffy - prevjiffy)
 	usage := (usercpu + systemcpu) * 100
 	// Return value is truncated to 2 places after decimal
-	return float64(int(usage * 100))/100
+	return float64(int(usage*100)) / 100
 }
 
 func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
@@ -126,10 +126,7 @@ func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]Pro
 				} else {
 					cpu = 0
 				}
-				result[pid] = ProcessInfo{ps.pid, ps.name, ps.state, cpu, ps.rss/(256)}
-				if ps.pid == 20806 {
-					fmt.Println(ps.rss, float64(ps.rss)/(6.5*1024))
-				}
+				result[pid] = ProcessInfo{ps.pid, ps.name, ps.state, cpu, ps.rss / (256)}
 				prev[pid] = ps
 			}
 
