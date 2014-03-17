@@ -34,9 +34,8 @@ func TestTotalCPUWrongFile(t *testing.T) {
 	cpuInfoChan, errc := TotalCPU(done, Delay)
 	for {
 		select {
-		case cpuInfo := <-cpuInfoChan:
-			a, _ := json.Marshal(cpuInfo)
-			t.Log(string(a))
+		case <-cpuInfoChan:
+			t.Fatal("Should not return anything")
 		case err := <-errc:
 			if err == nil {
 				t.FailNow()

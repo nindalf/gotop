@@ -34,9 +34,8 @@ func TestMemoryUsageWrongFile(t *testing.T) {
 	memInfoChan, errc := TotalMemory(done, Delay)
 	for {
 		select {
-		case memInfo := <-memInfoChan:
-			a, _ := json.Marshal(memInfo)
-			t.Log(string(a))
+		case <-memInfoChan:
+			t.Fatal("Should not return anything")
 		case err := <-errc:
 			if err == nil {
 				t.FailNow()
