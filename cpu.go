@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	totalCPUFile = "/proc/stat"
+	TotalCPUFile = "/proc/stat"
 	cpuInfoFile  = "/proc/cpuinfo"
 )
 
@@ -93,7 +93,7 @@ func getStats(current, previous string) float64 {
 }
 
 func readCPUFile() ([]string, error) {
-	snapshot, err := readFile(totalCPUFile)
+	snapshot, err := readFile(TotalCPUFile)
 	if err != nil {
 		return make([]string, 0), err
 	}
