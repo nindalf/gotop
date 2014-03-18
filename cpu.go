@@ -2,7 +2,6 @@ package gotop
 
 import (
 	// "fmt"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -67,20 +66,17 @@ func getCPUInfo(prev, cur []string) CPUInfo {
 }
 
 func getStats(current, previous string) float64 {
-	// Should replace hardcoded value 5. If cpu levels are absurdly high, its because of this
-	prev, cur := strings.Split(previous[5:], " "), strings.Split(current[5:], " ")
-	activeTime, idleTime := 0.0, 0.0
-	for i := 0; i < len(cur); i++ {
-		time1, _ := strconv.ParseFloat(prev[i], 32)
-		time2, _ := strconv.ParseFloat(cur[i], 32)
+	prev, cur := stringtointslice(previous), stringtointslice(current)
+	var activeTime, idleTime int
+	for i := range cur {
 		if i != 3 {
-			activeTime = activeTime + time2 - time1
+			activeTime = activeTime + cur[i] - prev[i]
 		} else {
 			// Idle time is the fourth column
-			idleTime = +time2 - time1
+			idleTime = cur[i] - prev[i]
 		}
 	}
-	activePercentage := 100 * activeTime / (activeTime + idleTime)
+	activePercentage := 100 * float64(activeTime) / float64(activeTime+idleTime)
 	// Return value is truncated to 2 places after decimal
 	return float64(int(100*activePercentage)) / 100
 }
