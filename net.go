@@ -55,14 +55,6 @@ func numbytes(path string) (float64, error) {
 	return float64(total), nil
 }
 
-func getrate(prevbytes, curbytes float64, prevtime, curtime int64) float64 {
-	// Needs to be converted from nanoseconds to seconds
-	timedelta := float64(curtime-prevtime) / 1000000000
-	rate := (curbytes - prevbytes) / (timedelta * 1024)
-	// Return value is truncated to 2 places after decimal
-	return float64(int(100*rate)) / 100
-}
-
 func NetRate(done <-chan struct{}, delay time.Duration) (<-chan Net, <-chan error) {
 	result := make(chan Net, 1)
 	errc := make(chan error)

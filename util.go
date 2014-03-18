@@ -15,6 +15,7 @@ var (
 	//Delay between samples
 	Delay = 500 * time.Millisecond
 )
+
 type Systeminfo struct {
 	Sysname  string
 	Nodename string
@@ -72,10 +73,11 @@ func stringtointslice(input string) []int {
 	re, _ := regexp.Compile(" +")
 	input = re.ReplaceAllLiteralString(input, " ")
 	input = strings.Trim(input, " \n")
+
 	temp := strings.Split(input, " ")
 	output := make([]int, len(temp))
 	var index int
-	for _, val := range(temp) {
+	for _, val := range temp {
 		valint, err := strconv.Atoi(val)
 		if err == nil {
 			output[index] = valint
@@ -83,4 +85,12 @@ func stringtointslice(input string) []int {
 		}
 	}
 	return output[:index]
+}
+
+func getrate(prevval, curval float64, prevtime, curtime int64) float64 {
+	// Needs to be converted from nanoseconds to seconds
+	timedelta := float64(curtime-prevtime) / 1000000000
+	rate := (curval - prevval) / (timedelta * 1024)
+	// Return value is truncated to 2 places after decimal
+	return float64(int(100*rate)) / 100
 }
