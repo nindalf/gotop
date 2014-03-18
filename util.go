@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -13,16 +15,6 @@ var (
 	//Delay between samples
 	Delay = 500 * time.Millisecond
 )
-
-func readFile(filename string) (string, error) {
-	bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		errorString := fmt.Sprintf("Could not read file %s .", filename)
-		return "", errors.New(errorString)
-	}
-	return string(bytes), nil
-}
-
 type Systeminfo struct {
 	Sysname  string
 	Nodename string
@@ -32,6 +24,22 @@ type Systeminfo struct {
 	CPUModel string
 	NumCPU   int
 	Memory   string
+}
+
+func Sysinfo() Systeminfo {
+	var uts syscall.Utsname
+	syscall.Uname(&uts)
+	sysname := charToStr(uts.Sysname)
+	nodename := charToStr(uts.Nodename)
+	release := charToStr(uts.Release)
+	version := charToStr(uts.Version)
+	machine := charToStr(uts.Machine)
+	model := cpuModel()
+	numCPU := numberOfCpus()
+	memInfo, _ := getMemInfo()
+	memory := float64(memInfo.MemTotal) / (1024 * 1024)
+	memstr := strconv.FormatFloat(memory, 'f', 2, 64) + "GB"
+	return Systeminfo{sysname, nodename, release, version, machine, model, numCPU, memstr}
 }
 
 func (s Systeminfo) String() string {
@@ -50,18 +58,29 @@ func charToStr(input [65]int8) string {
 	return string(out)
 }
 
-func Sysinfo() Systeminfo {
-	var uts syscall.Utsname
-	syscall.Uname(&uts)
-	sysname := charToStr(uts.Sysname)
-	nodename := charToStr(uts.Nodename)
-	release := charToStr(uts.Release)
-	version := charToStr(uts.Version)
-	machine := charToStr(uts.Machine)
-	model := cpuModel()
-	numCPU := numberOfCpus()
-	memInfo, _ := getMemInfo()
-	memory := float64(memInfo.MemTotal) / (1024 * 1024)
-	memstr := strconv.FormatFloat(memory, 'f', 2, 64) + "GB"
-	return Systeminfo{sysname, nodename, release, version, machine, model, numCPU, memstr}
+func readFile(filename string) (string, error) {
+	bytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		errorString := fmt.Sprintf("Could not read file %s .", filename)
+		return "", errors.New(errorString)
+	}
+	return string(bytes), nil
+}
+
+func stringtointslice(input string) []int {
+	// Get rid of extra spaces
+	re, _ := regexp.Compile(" +")
+	input = re.ReplaceAllLiteralString(input, " ")
+	input = strings.Trim(input, " \n")
+	temp := strings.Split(input, " ")
+	output := make([]int, len(temp))
+	var index int
+	for _, val := range(temp) {
+		valint, err := strconv.Atoi(val)
+		if err == nil {
+			output[index] = valint
+			index = index + 1
+		}
+	}
+	return output[:index]
 }
