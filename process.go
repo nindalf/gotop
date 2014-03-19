@@ -9,10 +9,18 @@ import (
 	"time"
 )
 
+/*
+#include <unistd.h>
+unsigned int get_pagesize(void) {
+  return sysconf(_SC_PAGESIZE);
+}
+*/
+import "C"
+
 var (
 	procDirectory   = "/proc"
 	processStatFile = "/proc/%d/stat"
-	processMemFile  = "/proc/%d/status"
+	processMemFile  = "/proc/%d/statm"
 	processStates   = map[string]string{"R": "Running", "S": "Sleeping", "D": "Sleeping-uninterruptable", "Z": "Zombie", "T": "Traced/Stopped"}
 )
 
@@ -31,7 +39,7 @@ type pstat struct {
 	utime     int
 	stime     int
 	startTime int
-	rss       int
+	// rss       int
 }
 
 func processIds() ([]int, error) {
@@ -73,8 +81,8 @@ func processStat(pid int) (pstat, error) {
 	utime, _ := strconv.Atoi(pfile[13])
 	stime, _ := strconv.Atoi(pfile[14])
 	starttime, _ := strconv.Atoi(pfile[21])
-	rss, _ := strconv.Atoi(pfile[23])
-	return pstat{pid, name, state, utime, stime, starttime, rss}, nil
+	// rss, _ := strconv.Atoi(pfile[23])
+	return pstat{pid, name, state, utime, stime, starttime}, nil
 }
 
 func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
@@ -125,7 +133,7 @@ func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]Pro
 				} else {
 					cpu = 0
 				}
-				result[pid] = ProcessInfo{ps.pid, ps.name, ps.state, cpu, ps.rss / (256)}
+				result[pid] = ProcessInfo{ps.pid, ps.name, ps.state, cpu, 0}
 				prev[pid] = ps
 			}
 
@@ -140,7 +148,13 @@ func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]Pro
 }
 
 func processMem(pid int) (int, error) {
-	return 0, nil
+	memfile := fmt.Sprintf(processMemFile, pid)
+	val, err := readFile(memfile)
+	if err != nil {
+		return 0, err
+	}
+	vals := stringtointslice(val)
+	return vals[1], nil
 }
 
 func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int, <-chan error) {
@@ -160,6 +174,7 @@ func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int,
 		}
 		var result map[int]int
 		var mem int
+		psize := pagesize()
 		for {
 			result = make(map[int]int)
 			for _, pid := range pids {
@@ -169,6 +184,9 @@ func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int,
 				}
 				result[pid] = mem
 			}
+			for key, val := range result {
+				result[key] = val * psize
+			}
 			select {
 			case resultChan <- result:
 			case <-done:
@@ -177,6 +195,11 @@ func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int,
 		}
 	}()
 	return resultChan, errc
+}
+
+
+func pagesize() int{
+	return int(C.get_pagesize())
 }
 
 func merge(pInfo map[int]ProcessInfo, pMem map[int]int) map[int]ProcessInfo {
@@ -207,20 +230,18 @@ func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[int]P
 			case pInfo = <-pInfoChan:
 				pMem = <-pMemChan
 				pInfo = merge(pInfo, pMem)
+				resultChan <- pInfo
 			case pMem = <-pMemChan:
 				pInfo = <-pInfoChan
 				pInfo = merge(pInfo, pMem)
+				resultChan <- pInfo
 			case err = <-errsc:
 				return
 			case err = <-errmc:
 				return
-			}
-			select {
-			case resultChan <- pInfo:
 			case <-done:
 				return
 			}
-
 		}
 	}()
 	return resultChan, errc
