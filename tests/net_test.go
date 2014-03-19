@@ -2,7 +2,6 @@ package gotop
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nindalf/gotop"
 	"testing"
 	"time"
@@ -26,7 +25,6 @@ func TestNet(t *testing.T) {
 		case net := <-netChan:
 			a, _ := json.Marshal(net)
 			t.Log(string(a))
-			fmt.Println(string(a))
 			success = true
 		case err := <-errc:
 			if err != nil {
