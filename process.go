@@ -32,67 +32,81 @@ type ProcessInfo struct {
 	Memory int
 }
 
-type pstat struct {
-	pid       int
-	name      string
-	state     string
-	utime     int
-	stime     int
-	startTime int
-	// rss       int
-}
-
-func processIds() ([]int, error) {
-	file, err := os.Open(procDirectory)
-	if err != nil {
-		return make([]int, 0), err
+func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
+	resultChan := make(chan map[int]ProcessInfo, 1)
+	errc := make(chan error)
+	pInfoChan, errsc := processStats(done, delay)
+	pMemChan, errmc := processMems(done, delay)
+	var err error
+	cleanup := func() {
+		errc <- err
+		close(errc)
+		close(resultChan)
 	}
-	fi, _ := file.Readdir(-1)
-	pids := make([]int, len(fi))
-	var index int
-	for _, i := range fi {
-		val, err := strconv.Atoi(i.Name())
-		if err != nil {
-			continue
+	go func() {
+		defer cleanup()
+		var pMem map[int]int
+		var pInfo map[int]ProcessInfo
+		for {
+			select {
+			case pInfo = <-pInfoChan:
+				pMem = <-pMemChan
+				pInfo = merge(pInfo, pMem)
+				resultChan <- pInfo
+			case pMem = <-pMemChan:
+				pInfo = <-pInfoChan
+				pInfo = merge(pInfo, pMem)
+				resultChan <- pInfo
+			case err = <-errsc:
+				return
+			case err = <-errmc:
+				return
+			case <-done:
+				return
+			}
 		}
-		pids[index] = val
-		index = index + 1
-	}
-	return pids[:index], nil
+	}()
+	return resultChan, errc
 }
 
-func readStatFile(pid int) ([]string, error) {
-	path := fmt.Sprintf(processStatFile, pid)
-	file, err := readFile(path)
-	if err != nil {
-		return make([]string, 0), err
+func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int, <-chan error) {
+	resultChan := make(chan map[int]int, 1)
+	errc := make(chan error)
+	var err error
+	cleanup := func() {
+		errc <- err
+		close(errc)
+		close(resultChan)
 	}
-	return strings.Split(file, " "), nil
-}
-
-func processStat(pid int) (pstat, error) {
-	pfile, err := readStatFile(pid)
-	if err != nil {
-		return pstat{}, err
-	}
-	name := pfile[1]
-	name = name[1 : len(name)-1] // Removes parentheses
-	state := processStates[pfile[2]]
-	utime, _ := strconv.Atoi(pfile[13])
-	stime, _ := strconv.Atoi(pfile[14])
-	starttime, _ := strconv.Atoi(pfile[21])
-	// rss, _ := strconv.Atoi(pfile[23])
-	return pstat{pid, name, state, utime, stime, starttime}, nil
-}
-
-func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
-	// Time is in nanoseconds. Needs to be converted to jiffies.
-	timedelta := float64(curtime-prevtime) / 10000000
-	usercpu := float64(curps.utime-prevps.utime) / timedelta
-	systemcpu := float64(curps.stime-prevps.stime) / timedelta
-	usage := (usercpu + systemcpu) * 100
-	// Return value is truncated to 2 places after decimal
-	return float64(int(usage*100)) / 100
+	go func() {
+		defer cleanup()
+		pids, err := processIds()
+		if err != nil {
+			return
+		}
+		var result map[int]int
+		var mem int
+		psize := pagesize()
+		for {
+			result = make(map[int]int)
+			for _, pid := range pids {
+				mem, err = processMem(pid)
+				if err != nil {
+					return
+				}
+				result[pid] = mem
+			}
+			for key, val := range result {
+				result[key] = val * psize
+			}
+			select {
+			case resultChan <- result:
+			case <-done:
+				return
+			}
+		}
+	}()
+	return resultChan, errc
 }
 
 func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
@@ -147,6 +161,68 @@ func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]Pro
 	return resultChan, errc
 }
 
+func processIds() ([]int, error) {
+	file, err := os.Open(procDirectory)
+	if err != nil {
+		return make([]int, 0), err
+	}
+	fi, _ := file.Readdir(-1)
+	pids := make([]int, len(fi))
+	var index int
+	for _, i := range fi {
+		val, err := strconv.Atoi(i.Name())
+		if err != nil {
+			continue
+		}
+		pids[index] = val
+		index = index + 1
+	}
+	return pids[:index], nil
+}
+
+func readStatFile(pid int) ([]string, error) {
+	path := fmt.Sprintf(processStatFile, pid)
+	file, err := readFile(path)
+	if err != nil {
+		return make([]string, 0), err
+	}
+	return strings.Split(file, " "), nil
+}
+
+type pstat struct {
+	pid       int
+	name      string
+	state     string
+	utime     int
+	stime     int
+	startTime int
+}
+
+func processStat(pid int) (pstat, error) {
+	pfile, err := readStatFile(pid)
+	if err != nil {
+		return pstat{}, err
+	}
+	name := pfile[1]
+	name = name[1 : len(name)-1] // Removes parentheses
+	state := processStates[pfile[2]]
+	utime, _ := strconv.Atoi(pfile[13])
+	stime, _ := strconv.Atoi(pfile[14])
+	starttime, _ := strconv.Atoi(pfile[21])
+	// rss, _ := strconv.Atoi(pfile[23])
+	return pstat{pid, name, state, utime, stime, starttime}, nil
+}
+
+func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
+	// Time is in nanoseconds. Needs to be converted to jiffies.
+	timedelta := float64(curtime-prevtime) / 10000000
+	usercpu := float64(curps.utime-prevps.utime) / timedelta
+	systemcpu := float64(curps.stime-prevps.stime) / timedelta
+	usage := (usercpu + systemcpu) * 100
+	// Return value is truncated to 2 places after decimal
+	return float64(int(usage*100)) / 100
+}
+
 func processMem(pid int) (int, error) {
 	memfile := fmt.Sprintf(processMemFile, pid)
 	val, err := readFile(memfile)
@@ -156,47 +232,6 @@ func processMem(pid int) (int, error) {
 	vals := stringtointslice(val)
 	return vals[1], nil
 }
-
-func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int, <-chan error) {
-	resultChan := make(chan map[int]int, 1)
-	errc := make(chan error)
-	var err error
-	cleanup := func() {
-		errc <- err
-		close(errc)
-		close(resultChan)
-	}
-	go func() {
-		defer cleanup()
-		pids, err := processIds()
-		if err != nil {
-			return
-		}
-		var result map[int]int
-		var mem int
-		psize := pagesize()
-		for {
-			result = make(map[int]int)
-			for _, pid := range pids {
-				mem, err = processMem(pid)
-				if err != nil {
-					return
-				}
-				result[pid] = mem
-			}
-			for key, val := range result {
-				result[key] = val * psize
-			}
-			select {
-			case resultChan <- result:
-			case <-done:
-				return
-			}
-		}
-	}()
-	return resultChan, errc
-}
-
 
 func pagesize() int{
 	return int(C.get_pagesize())
@@ -208,41 +243,4 @@ func merge(pInfo map[int]ProcessInfo, pMem map[int]int) map[int]ProcessInfo {
 		pInfo[pid] = val
 	}
 	return pInfo
-}
-
-func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
-	resultChan := make(chan map[int]ProcessInfo, 1)
-	errc := make(chan error)
-	pInfoChan, errsc := processStats(done, delay)
-	pMemChan, errmc := processMems(done, delay)
-	var err error
-	cleanup := func() {
-		errc <- err
-		close(errc)
-		close(resultChan)
-	}
-	go func() {
-		defer cleanup()
-		var pMem map[int]int
-		var pInfo map[int]ProcessInfo
-		for {
-			select {
-			case pInfo = <-pInfoChan:
-				pMem = <-pMemChan
-				pInfo = merge(pInfo, pMem)
-				resultChan <- pInfo
-			case pMem = <-pMemChan:
-				pInfo = <-pInfoChan
-				pInfo = merge(pInfo, pMem)
-				resultChan <- pInfo
-			case err = <-errsc:
-				return
-			case err = <-errmc:
-				return
-			case <-done:
-				return
-			}
-		}
-	}()
-	return resultChan, errc
 }
