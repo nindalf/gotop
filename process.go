@@ -1,7 +1,6 @@
 package gotop
 
 import (
-	// "errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -209,7 +208,6 @@ func processStat(pid int) (pstat, error) {
 	utime, _ := strconv.Atoi(pfile[13])
 	stime, _ := strconv.Atoi(pfile[14])
 	starttime, _ := strconv.Atoi(pfile[21])
-	// rss, _ := strconv.Atoi(pfile[23])
 	return pstat{pid, name, state, utime, stime, starttime}, nil
 }
 
@@ -233,7 +231,7 @@ func processMem(pid int) (int, error) {
 	return vals[1], nil
 }
 
-func pagesize() int{
+func pagesize() int {
 	return int(C.get_pagesize())
 }
 
