@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -36,7 +37,7 @@ func Sysinfo() Systeminfo {
 	version := charToStr(uts.Version)
 	machine := charToStr(uts.Machine)
 	model := cpuModel()
-	numCPU := numberOfCpus()
+	numCPU := runtime.NumCPU()
 	memInfo, _ := getMemInfo()
 	memory := float64(memInfo.MemTotal) / (1024 * 1024)
 	memstr := strconv.FormatFloat(memory, 'f', 2, 64) + "GB"

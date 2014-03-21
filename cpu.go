@@ -2,6 +2,7 @@ package gotop
 
 import (
 	// "fmt"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -50,7 +51,7 @@ func TotalCPU(done <-chan struct{}, delay time.Duration) (<-chan CPUInfo, <-chan
 }
 
 func getCPUInfo(prev, cur []string) CPUInfo {
-	numberOfCpus := numberOfCpus()
+	numberOfCpus := runtime.NumCPU()
 	cpuInfo := CPUInfo{AverageUtilization: 0.0, CPUUtilization: make([]float64, numberOfCpus)}
 
 	// This is the first time the query is happening
@@ -79,23 +80,6 @@ func getStats(current, previous string) float64 {
 	activePercentage := 100 * float64(activeTime) / float64(activeTime+idleTime)
 	// Return value is truncated to 2 places after decimal
 	return float64(int(100*activePercentage)) / 100
-}
-
-func numberOfCpus() int {
-	numberOfCpus := 0
-	cpuStats, err := readCPUFile()
-	if err != nil {
-		return 0
-	}
-	for i := 0; i < len(cpuStats); i++ {
-		if strings.Index(cpuStats[i], "cpu") == 0 {
-			numberOfCpus = numberOfCpus + 1
-		} else {
-			break
-		}
-	}
-	// The first line of the file is the average of all CPUs
-	return numberOfCpus - 1
 }
 
 func readCPUFile() ([]string, error) {
