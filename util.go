@@ -51,13 +51,15 @@ func (s Systeminfo) String() string {
 
 func charToStr(input [65]int8) string {
 	out := make([]byte, len(input))
+	var length int
 	for i, val := range input {
 		if val == 0 {
+			length = i
 			break
 		}
 		out[i] = byte(val)
 	}
-	return string(out)
+	return string(out[:length])
 }
 
 func readFile(filename string) (string, error) {
