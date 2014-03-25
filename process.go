@@ -20,7 +20,7 @@ var (
 	procDirectory   = "/proc"
 	processStatFile = "/proc/%d/stat"
 	processMemFile  = "/proc/%d/statm"
-	processStates   = map[string]string{"R": "Running", "S": "Sleeping", "D": "Sleeping-uninterruptable", "Z": "Zombie", "T": "Traced/Stopped"}
+	// processStates   = map[string]string{"R": "Running", "S": "Sleeping", "D": "Sleeping-uninterruptable", "Z": "Zombie", "T": "Traced/Stopped"}
 )
 
 type ProcessInfo struct {
@@ -31,8 +31,8 @@ type ProcessInfo struct {
 	Memory int
 }
 
-func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
-	resultChan := make(chan map[int]ProcessInfo, 1)
+func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[string]ProcessInfo, <-chan error) {
+	resultChan := make(chan map[string]ProcessInfo, 1)
 	errc := make(chan error)
 	pInfoChan, errsc := processStats(done, delay)
 	pMemChan, errmc := processMems(done, delay)
@@ -50,12 +50,12 @@ func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[int]P
 			select {
 			case pInfo = <-pInfoChan:
 				pMem = <-pMemChan
-				pInfo = merge(pInfo, pMem)
-				resultChan <- pInfo
+				result := merge(pInfo, pMem)
+				resultChan <- result
 			case pMem = <-pMemChan:
 				pInfo = <-pInfoChan
-				pInfo = merge(pInfo, pMem)
-				resultChan <- pInfo
+				result := merge(pInfo, pMem)
+				resultChan <- result
 			case err = <-errsc:
 				return
 			case err = <-errmc:
@@ -204,7 +204,7 @@ func processStat(pid int) (pstat, error) {
 	}
 	name := pfile[1]
 	name = name[1 : len(name)-1] // Removes parentheses
-	state := processStates[pfile[2]]
+	state := pfile[2]            //processStates[pfile[2]]
 	utime, _ := strconv.Atoi(pfile[13])
 	stime, _ := strconv.Atoi(pfile[14])
 	starttime, _ := strconv.Atoi(pfile[21])
@@ -235,10 +235,13 @@ func pagesize() int {
 	return int(C.get_pagesize())
 }
 
-func merge(pInfo map[int]ProcessInfo, pMem map[int]int) map[int]ProcessInfo {
+func merge(pInfo map[int]ProcessInfo, pMem map[int]int) map[string]ProcessInfo {
+	result := make(map[string]ProcessInfo)
 	for pid, val := range pInfo {
 		val.Memory = pMem[pid]
-		pInfo[pid] = val
+		if val.Memory != 0 {
+			result[strconv.Itoa(pid)] = val
+		}
 	}
-	return pInfo
+	return result
 }
