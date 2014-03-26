@@ -32,19 +32,21 @@ type ProcessInfo struct {
 }
 
 func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[string]ProcessInfo, <-chan error) {
-	resultChan := make(chan map[string]ProcessInfo, 1)
+	resultc := make(chan map[string]ProcessInfo, 1)
 	errc := make(chan error)
-	pInfoChan, errsc := processStats(done, delay)
-	pMemChan, errmc := processMems(done, delay)
+	pInfoChan := processStats(done, delay)
+	pMemChan := processMems(done, delay)
 	var err error
 	cleanup := func() {
-		fmt.Println(err)
 		errc <- err
 		close(errc)
-		close(resultChan)
+		close(resultc)
 	}
 	go func() {
 		defer cleanup()
+		if err = checkProcDirectory(); err != nil {
+			return
+		}
 		var pMem map[int]int
 		var pInfo map[int]ProcessInfo
 		for {
@@ -52,123 +54,86 @@ func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[strin
 			case pInfo = <-pInfoChan:
 				pMem = <-pMemChan
 				result := merge(pInfo, pMem)
-				resultChan <- result
+				resultc <- result
 			case pMem = <-pMemChan:
 				pInfo = <-pInfoChan
 				result := merge(pInfo, pMem)
-				resultChan <- result
-			case err = <-errsc:
-				fmt.Println(err)
-				return
-			case err = <-errmc:
-				fmt.Println(err)
-				return
+				resultc <- result
 			case <-done:
 				return
 			}
 		}
 	}()
-	return resultChan, errc
+	return resultc, errc
 }
 
-func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int, <-chan error) {
-	resultChan := make(chan map[int]int, 1)
-	errc := make(chan error)
-	var err error
-	cleanup := func() {
-		errc <- err
-		close(errc)
-		close(resultChan)
-	}
+func processMems(done <-chan struct{}, delay time.Duration) <-chan map[int]int {
+	resultc := make(chan map[int]int, 1)
 	go func() {
-		defer cleanup()
+		defer close(resultc)
 		var pids []int
-		pids, err = processIds()
-		if err != nil {
-			return
-		}
 		var result map[int]int
-		var mem int
 		psize := pagesize()
 		for {
+			pids = processIds()
 			result = make(map[int]int)
 			for _, pid := range pids {
-				mem, err = processMem(pid)
-				if err != nil {
-					return
-				}
+				mem := processMem(pid)
 				result[pid] = mem
 			}
 			for key, val := range result {
 				result[key] = val * psize
 			}
 			select {
-			case resultChan <- result:
+			case resultc <- result:
 			case <-done:
 				return
 			}
 		}
 	}()
-	return resultChan, errc
+	return resultc
 }
 
-func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]ProcessInfo, <-chan error) {
-	resultChan := make(chan map[int]ProcessInfo, 1)
-	errc := make(chan error, 1)
-	var err error
-	cleanup := func() {
-		errc <- err
-		close(errc)
-		close(resultChan)
-	}
+func processStats(done <-chan struct{}, delay time.Duration) <-chan map[int]ProcessInfo {
+	resultc := make(chan map[int]ProcessInfo, 1)
 	go func() {
-		defer cleanup()
+		defer close(resultc)
 		var pids []int
-		pids, err = processIds()
-		if err != nil {
-			return
-		}
 		var result map[int]ProcessInfo
 		prev := make(map[int]pstat)
-		var ps pstat
 		var cpu float64
-		var curtime, prevtime int64
+		var timecur, timeprev int64
 		for {
-			prevtime = curtime
+			timeprev = timecur
 			time.Sleep(delay)
-			curtime = time.Now().UnixNano()
-			if err != nil {
-				return
-			}
+			timecur = time.Now().UnixNano()
+			pids = processIds()
 			result = make(map[int]ProcessInfo)
 			for _, pid := range pids {
-				ps, err = processStat(pid)
-				if err != nil {
-					return
-				}
+				pscur := processStat(pid)
 				if psprev, ok := prev[pid]; ok {
-					cpu = calcCPU(psprev, ps, prevtime, curtime)
+					cpu = calcCPU(psprev, pscur, timeprev, timecur)
 				} else {
 					cpu = 0
 				}
-				result[pid] = ProcessInfo{ps.pid, ps.name, ps.state, cpu, 0}
-				prev[pid] = ps
+				result[pid] = ProcessInfo{pscur.pid, pscur.name, pscur.state, cpu, 0}
+				prev[pid] = pscur
 			}
 
 			select {
-			case resultChan <- result:
+			case resultc <- result:
 			case <-done:
 				return
 			}
 		}
 	}()
-	return resultChan, errc
+	return resultc
 }
 
-func processIds() ([]int, error) {
+func processIds() []int {
 	file, err := os.Open(procDirectory)
 	if err != nil {
-		return make([]int, 0), err
+		return make([]int, 0)
 	}
 	fi, _ := file.Readdir(-1)
 	pids := make([]int, len(fi))
@@ -181,7 +146,7 @@ func processIds() ([]int, error) {
 		pids[index] = val
 		index = index + 1
 	}
-	return pids[:index], nil
+	return pids[:index]
 }
 
 func readStatFile(pid int) ([]string, error) {
@@ -202,10 +167,10 @@ type pstat struct {
 	startTime int
 }
 
-func processStat(pid int) (pstat, error) {
+func processStat(pid int) pstat {
 	pfile, err := readStatFile(pid)
 	if err != nil {
-		return pstat{}, err
+		return pstat{}
 	}
 	name := pfile[1]
 	name = name[1 : len(name)-1] // Removes parentheses
@@ -213,7 +178,7 @@ func processStat(pid int) (pstat, error) {
 	utime, _ := strconv.Atoi(pfile[13])
 	stime, _ := strconv.Atoi(pfile[14])
 	starttime, _ := strconv.Atoi(pfile[21])
-	return pstat{pid, name, state, utime, stime, starttime}, nil
+	return pstat{pid, name, state, utime, stime, starttime}
 }
 
 func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
@@ -226,14 +191,14 @@ func calcCPU(prevps, curps pstat, prevtime, curtime int64) float64 {
 	return float64(int(usage*100)) / 100
 }
 
-func processMem(pid int) (int, error) {
+func processMem(pid int) int {
 	memfile := fmt.Sprintf(processMemFile, pid)
 	val, err := readFile(memfile)
 	if err != nil {
-		return 0, err
+		return 0
 	}
 	vals := stringtointslice(val)
-	return vals[1], nil
+	return vals[1]
 }
 
 func pagesize() int {
@@ -248,5 +213,22 @@ func merge(pInfo map[int]ProcessInfo, pMem map[int]int) map[string]ProcessInfo {
 			result[strconv.Itoa(pid)] = val
 		}
 	}
+	if len(pInfo) == 0 || len(pMem) == 0 || len(result) == 0 {
+		fmt.Println("some length is zero. pinfo, pmem, result", len(pInfo), len(pMem), len(result))
+	}
 	return result
+}
+
+func checkProcDirectory() error {
+	memfile := fmt.Sprintf(processMemFile, 1)
+	if _, err := readFile(memfile); err != nil {
+		return err
+	}
+	if _, err := readStatFile(1); err != nil {
+		return err
+	}
+	if _, err := os.Open(procDirectory); err != nil {
+		return err
+	}
+	return nil
 }

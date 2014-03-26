@@ -23,7 +23,7 @@ func TestProcessInfo(t *testing.T) {
 		}
 		select {
 		case processInfo := <-processInfoChan:
-			a, _ := json.Marshal(processInfo[2152])
+			a, _ := json.Marshal(processInfo["1"])
 			t.Log(string(a))
 			success = true
 		case err := <-errc:
