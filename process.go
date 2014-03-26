@@ -38,6 +38,7 @@ func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[strin
 	pMemChan, errmc := processMems(done, delay)
 	var err error
 	cleanup := func() {
+		fmt.Println(err)
 		errc <- err
 		close(errc)
 		close(resultChan)
@@ -57,8 +58,10 @@ func GetProcessInfo(done <-chan struct{}, delay time.Duration) (<-chan map[strin
 				result := merge(pInfo, pMem)
 				resultChan <- result
 			case err = <-errsc:
+				fmt.Println(err)
 				return
 			case err = <-errmc:
+				fmt.Println(err)
 				return
 			case <-done:
 				return
@@ -79,7 +82,8 @@ func processMems(done <-chan struct{}, delay time.Duration) (<-chan map[int]int,
 	}
 	go func() {
 		defer cleanup()
-		pids, err := processIds()
+		var pids []int
+		pids, err = processIds()
 		if err != nil {
 			return
 		}
@@ -119,7 +123,8 @@ func processStats(done <-chan struct{}, delay time.Duration) (<-chan map[int]Pro
 	}
 	go func() {
 		defer cleanup()
-		pids, err := processIds()
+		var pids []int
+		pids, err = processIds()
 		if err != nil {
 			return
 		}
