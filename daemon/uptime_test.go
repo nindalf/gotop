@@ -1,12 +1,11 @@
-package gotop
+package daemon
 
 import (
-	"github.com/nindalf/gotop"
 	"testing"
 )
 
 func TestUptime(t *testing.T) {
-	uptimeDuration, err := gotop.Uptime()
+	uptimeDuration, err := Uptime()
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
@@ -15,7 +14,7 @@ func TestUptime(t *testing.T) {
 }
 
 func TestUpSince(t *testing.T) {
-	upSince, err := gotop.UpSince()
+	upSince, err := UpSince()
 	if err != nil {
 		t.Log(err)
 		t.FailNow()

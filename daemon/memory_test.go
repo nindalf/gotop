@@ -1,17 +1,16 @@
-package gotop
+package daemon
 
 import (
 	"encoding/json"
-	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
 func TestTotalMemory(t *testing.T) {
 	done := make(chan struct{})
-	memInfoChan, errc := gotop.TotalMemory(done, gotop.Delay)
+	memInfoChan, errc := TotalMemory(done, Delay)
 	var success bool
-	timeout := time.After(2 * gotop.Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock

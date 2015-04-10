@@ -1,29 +1,28 @@
-package gotop
+package daemon
 
 import (
 	"encoding/json"
-	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
-func TestProcessInfo(t *testing.T) {
+func TestNet(t *testing.T) {
 	done := make(chan struct{})
-	processInfoChan, errc := gotop.GetProcessInfo(done, gotop.Delay)
+	netChan, errc := NetRate(done, Delay)
 	var success bool
-	timeout := time.After(2 * gotop.Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
 		<-errc
 	}()
 	for i := 0; ; i = i + 1 {
-		if i == 3 {
+		if i == 4 {
 			return
 		}
 		select {
-		case processInfo := <-processInfoChan:
-			a, _ := json.Marshal(processInfo["1"])
+		case net := <-netChan:
+			a, _ := json.Marshal(net)
 			t.Log(string(a))
 			success = true
 		case err := <-errc:

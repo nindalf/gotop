@@ -1,4 +1,4 @@
-package gotop
+package daemon
 
 import (
 	"fmt"

@@ -1,30 +1,28 @@
-package gotop
+package daemon
 
 import (
 	"encoding/json"
-	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
-func TestDisk(t *testing.T) {
+func TestTotalCPU(t *testing.T) {
 	done := make(chan struct{})
-	// Disk usually needs a much longer delay compared to other metrics
-	diskChan, errc := gotop.DiskRate(done, 5 * gotop.Delay)
+	cpuInfoChan, errc := TotalCPU(done, Delay)
 	var success bool
-	timeout := time.After(10 * gotop.Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
 		<-errc
 	}()
-	for i := 0; ; i++ {
-		if i == 10 {
+	for i := 0; ; i = i + 1 {
+		if i == 3 {
 			return
 		}
 		select {
-		case disk := <-diskChan:
-			a, _ := json.Marshal(disk)
+		case cpuInfo := <-cpuInfoChan:
+			a, _ := json.Marshal(cpuInfo)
 			t.Log(string(a))
 			success = true
 		case err := <-errc:

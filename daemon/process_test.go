@@ -1,17 +1,16 @@
-package gotop
+package daemon
 
 import (
 	"encoding/json"
-	"github.com/nindalf/gotop"
 	"testing"
 	"time"
 )
 
-func TestTotalCPU(t *testing.T) {
+func TestProcessInfo(t *testing.T) {
 	done := make(chan struct{})
-	cpuInfoChan, errc := gotop.TotalCPU(done, gotop.Delay)
+	processInfoChan, errc := GetProcessInfo(done, Delay)
 	var success bool
-	timeout := time.After(2 * gotop.Delay)
+	timeout := time.After(2 * Delay)
 	defer func() {
 		close(done)
 		// Necessary to read from error channel to prevent sending goroutine going into deadlock
@@ -22,8 +21,8 @@ func TestTotalCPU(t *testing.T) {
 			return
 		}
 		select {
-		case cpuInfo := <-cpuInfoChan:
-			a, _ := json.Marshal(cpuInfo)
+		case processInfo := <-processInfoChan:
+			a, _ := json.Marshal(processInfo["1"])
 			t.Log(string(a))
 			success = true
 		case err := <-errc:
